@@ -9,6 +9,17 @@ export default defineConfig({
       'tests/unit/**/*.{test,spec}.{ts,js}',
       'tests/integration/**/*.{test,spec}.{ts,js}',
     ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['bin/**/*.ts'],
+      exclude: [
+        'bin/**/*.test.ts',
+        'bin/**/*.spec.ts',
+        'node_modules/**',
+      ],
+    },
   },
   resolve: {
     alias: {

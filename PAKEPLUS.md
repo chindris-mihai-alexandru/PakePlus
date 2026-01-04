@@ -4,6 +4,7 @@
 
 [![Upstream Version](https://img.shields.io/badge/upstream-v3.7.4-blue.svg)](https://github.com/tw93/Pake)
 [![PakePlus Version](https://img.shields.io/badge/pakeplus-v3.7.4--plus.1-green.svg)](https://github.com/chindris-mihai-alexandru/PakePlus/releases)
+[![codecov](https://codecov.io/gh/chindris-mihai-alexandru/PakePlus/graph/badge.svg)](https://codecov.io/gh/chindris-mihai-alexandru/PakePlus)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ---

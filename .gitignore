@@ -38,3 +38,6 @@ src-tauri/.cargo/
 src-tauri/.pake/
 src-tauri/gen
 *.tmp
+
+# Coverage reports
+coverage/
