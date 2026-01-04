@@ -1,0 +1,133 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      create_pr:
+        description: "Create PR for upstream changes"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Check & Sync Upstream
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/tw93/Pake.git || true
+          git fetch upstream --tags
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          # Get current upstream tracking point
+          CURRENT_UPSTREAM=$(git merge-base HEAD upstream/main 2>/dev/null || echo "none")
+          LATEST_UPSTREAM=$(git rev-parse upstream/main)
+          
+          echo "current_upstream=$CURRENT_UPSTREAM" >> $GITHUB_OUTPUT
+          echo "latest_upstream=$LATEST_UPSTREAM" >> $GITHUB_OUTPUT
+          
+          if [ "$CURRENT_UPSTREAM" = "$LATEST_UPSTREAM" ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "Already up to date with upstream"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Upstream has new changes"
+            
+            # Get upstream version from package.json
+            UPSTREAM_VERSION=$(git show upstream/main:package.json | jq -r '.version')
+            echo "upstream_version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+            
+            # Count commits behind
+            COMMITS_BEHIND=$(git rev-list HEAD..upstream/main --count)
+            echo "commits_behind=$COMMITS_BEHIND" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create sync branch
+        if: steps.check.outputs.has_changes == 'true'
+        id: branch
+        run: |
+          BRANCH_NAME="sync/upstream-${{ steps.check.outputs.upstream_version }}-$(date +%Y%m%d)"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
+          # Create branch from main
+          git checkout -b "$BRANCH_NAME"
+          
+          # Try to merge upstream
+          if git merge upstream/main --no-edit; then
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+            git push origin "$BRANCH_NAME"
+          else
+            echo "merge_status=conflict" >> $GITHUB_OUTPUT
+            # Abort merge and push branch for manual resolution
+            git merge --abort
+            git push origin "$BRANCH_NAME"
+          fi
+
+      - name: Create Pull Request
+        if: steps.check.outputs.has_changes == 'true' && (github.event.inputs.create_pr == 'true' || github.event_name == 'schedule')
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.branch.outputs.branch_name }}
+          base: main
+          title: "chore: sync with upstream Pake v${{ steps.check.outputs.upstream_version }}"
+          body: |
+            ## Upstream Sync
+
+            This PR syncs PakePlus with upstream [tw93/Pake](https://github.com/tw93/Pake).
+
+            **Upstream version:** v${{ steps.check.outputs.upstream_version }}
+            **Commits behind:** ${{ steps.check.outputs.commits_behind }}
+            **Merge status:** ${{ steps.branch.outputs.merge_status }}
+
+            ### Changes from upstream
+
+            ```
+            git log --oneline ${{ steps.check.outputs.current_upstream }}..${{ steps.check.outputs.latest_upstream }}
+            ```
+
+            ### After merging
+
+            1. Update version in `package.json` to `${{ steps.check.outputs.upstream_version }}-plus.1`
+            2. Update PAKEPLUS.md badges if needed
+            3. Test the build locally
+
+            ---
+            *This PR was automatically created by the sync-upstream workflow.*
+          labels: |
+            upstream-sync
+            dependencies
+          draft: ${{ steps.branch.outputs.merge_status == 'conflict' }}
+
+      - name: Summary
+        run: |
+          {
+            echo "# Upstream Sync Summary"
+            echo ""
+            echo "| Status | Value |"
+            echo "|--------|-------|"
+            echo "| Has Changes | ${{ steps.check.outputs.has_changes }} |"
+            echo "| Upstream Version | ${{ steps.check.outputs.upstream_version || 'N/A' }} |"
+            echo "| Commits Behind | ${{ steps.check.outputs.commits_behind || '0' }} |"
+            echo "| Merge Status | ${{ steps.branch.outputs.merge_status || 'N/A' }} |"
+          } >> $GITHUB_STEP_SUMMARY
