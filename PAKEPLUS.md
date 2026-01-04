@@ -22,11 +22,39 @@ PakePlus uses the format: `{upstream_version}-plus.{patch}`
 | `3.7.4-plus.2` | Based on Pake 3.7.4, second PakePlus release |
 | `3.8.0-plus.1` | Based on Pake 3.8.0, first PakePlus release after sync |
 
-## Enhancements Over Upstream
+## Key Features
 
-*Coming soon - this fork is being set up for active development*
+### New Window Support (`--new-window`)
 
-Planned enhancements:
+Enable popup windows for third-party login flows, OAuth callbacks, and links that open in new tabs (`target="_blank"`).
+
+**Usage:**
+
+```bash
+# CLI flag
+pake https://example.com --name MyApp --new-window
+
+# Or in pake.json config
+{
+  "windows": [{
+    "url": "https://example.com",
+    "new_window": true
+  }]
+}
+```
+
+**When to use:**
+- Apps requiring OAuth/SSO login (Google, GitHub, etc.)
+- Sites that open content in new tabs
+- Any webapp with popup-based workflows
+
+**How it works:**
+When enabled, Tauri's `on_new_window` handler allows new window requests instead of blocking them (the default behavior).
+
+---
+
+## Planned Enhancements
+
 - [ ] Improved macOS integration
 - [ ] Better icon handling
 - [ ] Enhanced CLI options
