@@ -16,10 +16,10 @@ PakePlus is a maintained fork of [tw93/Pake](https://github.com/tw93/Pake) that 
 
 PakePlus uses the format: `{upstream_version}-plus.{patch}`
 
-| Version | Meaning |
-|---------|---------|
-| `3.7.4-plus.1` | Based on Pake 3.7.4, first PakePlus release |
-| `3.7.4-plus.2` | Based on Pake 3.7.4, second PakePlus release |
+| Version        | Meaning                                                |
+| -------------- | ------------------------------------------------------ |
+| `3.7.4-plus.1` | Based on Pake 3.7.4, first PakePlus release            |
+| `3.7.4-plus.2` | Based on Pake 3.7.4, second PakePlus release           |
 | `3.8.0-plus.1` | Based on Pake 3.8.0, first PakePlus release after sync |
 
 ## Key Features
@@ -44,6 +44,7 @@ pake https://example.com --name MyApp --new-window
 ```
 
 **When to use:**
+
 - Apps requiring OAuth/SSO login (Google, GitHub, etc.)
 - Sites that open content in new tabs
 - Any webapp with popup-based workflows
